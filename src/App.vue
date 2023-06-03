@@ -13,7 +13,7 @@ const modalStyle = computed(() => {
     }
 });
 
-usersStore.authenticate()
+
 </script>
 
 <template>

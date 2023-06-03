@@ -16,13 +16,20 @@ const allUsers: User[] = []
 app.get("/posts", (req, res) => {
     res.json(allPosts)
 })
-
+app.put<{}, {}, Post>("/posts", (req, res) => {
+    const index = allPosts.findIndex(x => x.id === req.body.id)
+    if(index === -1) {
+        throw Error(`Post with id ${req.body.id} was not found.`)
+    }
+    const existingPost = allPosts[index]
+    allPosts[index] = {...existingPost, ...req.body}
+    res.json(allPosts[index])
+})
 app.post<{}, {}, Post>("/posts", (req, res) => {
     const post = {...req.body, id: (Math.random() * 100000).toFixed()}
     allPosts.push(post)
     res.json(post)
 })
-
 const SECRET = 'my-secret'
 const COOKIE = 'vuejs-jwt'
 function authenticate (id: string, req: Request, res: Response) {
@@ -32,7 +39,6 @@ function authenticate (id: string, req: Request, res: Response) {
     })
     res.cookie(COOKIE, token, {httpOnly: true})
 }
-
 app.get("/current-user", (req, res ) => {
     try{
         const token = req.cookies[COOKIE]
@@ -43,7 +49,6 @@ app.get("/current-user", (req, res ) => {
         res.status(404).end();
     }
 })
-
 app.post("/logout", (req, res) => {
     //res.clearCookie(req.cookies[COOKIE])
     res.cookie(COOKIE, "", {httpOnly: true})
@@ -67,8 +72,6 @@ app.post<{}, {}, NewUser>("/users", (req, res) => {
     const {password, ...rest} = user
     res.json(rest)
 })
-
-
 app.listen(8000, () => {
     console.log('Listening on port 8000')
 })

@@ -1,15 +1,20 @@
 <script lang="ts" setup>
 import {ref, onMounted, watch, watchEffect} from "vue"
-import {TimelinePost} from "../posts";
+import {Post, TimelinePost} from "../posts";
 import {useRouter} from "vue-router";
 import {marked} from "marked";
 import highlightjs from "highlight.js"
 import debounce from "lodash/debounce";
 import {usePosts} from "../stores/posts";
+import {useUsers} from "../stores/users";
 
 const props = defineProps<{
-  post: TimelinePost
+  post: TimelinePost | Post
 }>()
+
+const emit = defineEmits<{
+    (event: "submit", post: Post): void;
+}>();
 
 const title = ref(props.post.title)
 const content = ref(props.post.markdown)
@@ -18,7 +23,7 @@ const contentEditable = ref<HTMLDivElement>()
 
 const posts = usePosts()
 const router = useRouter()
-
+const usersStore = useUsers()
 // watchEffect(() => {
 //     marked.parse(content.value, (err, parseResult) => {
 //         html.value = parseResult
@@ -57,14 +62,18 @@ function handleInput () {
 }
 
 async function handleClick() {
-    const newPost: TimelinePost = {
+    if(!usersStore.currentUserId){
+        throw Error('User was not found.')
+    }
+    const newPost: Post = {
         ...props.post,
+        created: typeof props.post.created === 'string' ? props.post.created : props.post.created.toISO(),
         title: title.value,
+        authorId: usersStore.currentUserId,
         markdown: content.value,
         html: html.value
     }
-    await posts.createPost(newPost)
-    router.push("/")
+    emit('submit', newPost)
 }
 </script>
 <template>
